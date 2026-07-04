@@ -1,114 +1,111 @@
-AniRec - GitHub Push & Deployment Guide
+AniRec - GitHub Push & Deployment Guide (Free Tier)
 
-This guide provides step-by-step instructions to systematically push your project to GitHub and host the Next.js frontend (Vercel) and FastAPI backend (Railway) with PostgreSQL.
+This guide provides step-by-step instructions to push your project to GitHub and host it using completely free services that do not expire after 30 days.
+
+Services used:
+- Frontend: Vercel (Free forever)
+- Backend API: Render (Free forever)
+- Database: Neon.tech or Supabase (Free forever serverless PostgreSQL)
 
 ================================================================================
 PART 1: Push Project to GitHub
 ================================================================================
 
-1. Recommended Repository Name:
-   - anime-recommender-cf
-   - or: anirec-recommendation-system
-
-2. Open your terminal at the root directory:
-   C:\Users\RISHI\.gemini\antigravity-ide\scratch\anime-recommender
-
-3. Initialize Git:
+1. Initialize Git (done):
    git init
 
-4. Verify your .gitignore files:
-   Make sure you have:
-   - backend/.gitignore (excluding venv/, .env, __pycache__/)
-   - frontend/.gitignore (excluding node_modules/, .next/, .env.local)
+2. Verify your root .gitignore exists and ignores:
+   - venv/
+   - frontend/node_modules/
+   - frontend/.next/
+   - backend/.env
+   - frontend/.env.local
 
-5. Stage and Commit Files:
-   git add .
-   git commit -m "initial commit: fullstack anime recommendation system with collaborative filtering"
-
-6. Create your repository on GitHub (without adding README, .gitignore, or license).
-
-7. Link and Push to GitHub:
-   Replace <username> with your GitHub username:
-   git remote add origin https://github.com/<username>/anime-recommender-cf.git
+3. Link and Push to GitHub:
+   git remote add origin https://github.com/rishi-msrit/anirec.git
    git branch -M main
+   git add .
+   git commit -m "initial commit"
    git push -u origin main
 
 
 ================================================================================
-PART 2: Understanding Production Hosting (Client-Server Architecture)
+PART 2: Create a Free PostgreSQL Database on Neon
 ================================================================================
 
-In local development, you run the backend on port 8000 and the frontend on port 3000. In production, these run on separate public servers (Vercel for frontend, Railway for backend).
-- The frontend (running in the user's browser) makes HTTP requests to the public backend API URL.
-- To prevent browsers from blocking these requests, Cross-Origin Resource Sharing (CORS) is enabled on the backend to allow your Vercel domain.
+Neon offers serverless PostgreSQL instances with a generous, non-expiring free tier.
 
-
-================================================================================
-PART 3: Deployed Backend & Database (Railway)
-================================================================================
-
-Railway hosts your PostgreSQL database and the FastAPI python server together.
-
-Step 1: Create a Railway Project
-  1. Go to https://railway.app and log in.
-  2. Click "New Project" -> "Deploy from GitHub repo".
-  3. Select your repository `anime-recommender-cf`.
-  4. In the settings, set the root directory to `backend`.
-
-Step 2: Add PostgreSQL Database
-  1. In your Railway project dashboard, click "New" -> "Database" -> "Add PostgreSQL".
-  2. Railway will automatically provision the database and inject a `DATABASE_URL` environment variable directly into your backend service.
-
-Step 3: Configure Environment Variables on Railway
-  Under the FastAPI service settings in Railway, add the following variables:
-  - `FRONTEND_URL` = https://your-app-name.vercel.app (You will get this in the next part)
-  - `APP_ENV` = production
-
-Step 4: Deploy and Fetch URL
-  Railway will build and deploy the backend. Copy your public backend URL (e.g., `https://anime-recommender-production.up.railway.app`).
+1. Go to https://neon.tech and sign up / log in.
+2. Click "Create Project" (name it something like `anirec-db`).
+3. Select your region (closest to your users, e.g., US East or Europe).
+4. After creation, Neon will show you a connection string. Copy the "Connection string" (select the transaction pooling option if available, or just the standard connection string).
+   It will look like:
+   postgresql://alex:password@ep-cool-butterfly-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
 
 
 ================================================================================
-PART 4: Deployed Frontend (Vercel)
+PART 3: Deploy Backend API on Render
 ================================================================================
 
-Vercel hosts the Next.js application.
+Render hosts the FastAPI server. It is completely free, though it spins down after 15 minutes of inactivity (takes ~30 seconds to wake up on the first visit).
 
-Step 1: Import Repository
-  1. Go to https://vercel.com and log in.
-  2. Click "Add New" -> "Project" -> Import your `anime-recommender-cf` repository.
-  3. Under "Framework Preset", select "Next.js".
-  4. In "Root Directory", click Edit and select `frontend`.
+1. Go to https://render.com and sign up / log in.
+2. Click "New +" -> "Web Service".
+3. Connect your GitHub account and select your `anirec` repository.
+4. Set the following configuration values:
+   - **Name**: `anirec-backend`
+   - **Environment**: `Python3` (or it will auto-detect from requirements.txt)
+   - **Root Directory**: `backend` (very important!)
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - **Instance Type**: `Free`
 
-Step 2: Set Environment Variables
-  Expand the "Environment Variables" section and add:
-  - Key: `NEXT_PUBLIC_API_URL`
-  - Value: https://your-backend-url.up.railway.app (The URL from Railway in Part 3)
+5. Scroll down and click **Advanced** -> **Add Environment Variable**:
+   - Key: `DATABASE_URL`
+     Value: (Paste the Neon connection string you copied in Part 2)
+   - Key: `FRONTEND_URL`
+     Value: https://your-app-name.vercel.app (You will set this in Part 4)
+   - Key: `APP_ENV`
+     Value: `production`
 
-Step 3: Deploy
-  Click "Deploy". Vercel will build the frontend and provide a public domain (e.g., `https://anime-recommender-cf.vercel.app`).
+6. Click **Create Web Service**. Render will install dependencies and start the app.
+7. Once deployed, copy your Render Service URL (e.g. `https://anirec-backend.onrender.com`).
 
-Step 4: Update CORS
-  Copy your Vercel deployment URL, go back to your Railway backend settings, and make sure `FRONTEND_URL` matches this URL.
+
+================================================================================
+PART 4: Deploy Frontend on Vercel
+================================================================================
+
+Vercel will host your Next.js frontend application.
+
+1. Go to https://vercel.com and log in.
+2. Click "Add New" -> "Project" -> Import your `anirec` repository.
+3. Configure the following settings:
+   - **Framework Preset**: `Next.js`
+   - **Root Directory**: `frontend` (click Edit and select frontend/)
+4. Under "Environment Variables", add:
+   - **Key**: `NEXT_PUBLIC_API_URL`
+   - **Value**: (Paste your Render Web Service URL from Part 3, e.g., `https://anirec-backend.onrender.com`)
+5. Click **Deploy**. Vercel will build the frontend and provide a public URL (e.g., `https://anirec-three.vercel.app`).
+
+6. **IMPORTANT FINAL STEP**: Copy your Vercel deployment URL, go back to Render settings for your backend service, and update the value of the environment variable `FRONTEND_URL` to match your Vercel URL exactly.
 
 
 ================================================================================
 PART 5: Seeding the Production Database
 ================================================================================
 
-Once both servers are running, seed the production database:
+Since your database is hosted on Neon, you can run the seeding scripts directly from your local terminal pointing to the Neon database URL.
 
-1. Install the Railway CLI locally:
-   npm install -g @railway/cli
+1. Open your local `.env` file in the `backend/` directory (or create one: `backend/.env`).
+2. Temporarily set:
+   DATABASE_URL=postgresql://alex:password@ep-cool-butterfly-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
+   (Use your actual Neon connection string!)
 
-2. Login to Railway via CLI:
-   railway login
+3. Activate your virtual environment and run the seeding scripts:
+   cd backend
+   source venv/bin/activate (or venv\Scripts\activate on Windows)
+   python scripts/seed_animes.py
+   python scripts/seed_users.py
 
-3. Link to your project:
-   railway link
-
-4. Execute the seeding scripts against the remote database:
-   railway run python scripts/seed_animes.py
-   railway run python scripts/seed_users.py
-
-Your production system is now live, seeded, and fully connected.
+4. The script will write the 500 MAL anime and 100 synthetic users directly to your Neon cloud database! Once done, you can delete the DATABASE_URL line from your local `.env` file to return it to local PostgreSQL defaults.

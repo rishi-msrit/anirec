@@ -33,7 +33,7 @@ The UI design is inspired by modern, real-life anime platforms, delivering a pre
                  │ REST API
                  ▼
 ┌─────────────────────────────────────────────┐
-│  FastAPI Backend (Railway)                  │
+│  FastAPI Backend (Render)                   │
 │  GET  /animes?search=&genre=&sort=          │
 │  GET  /animes/{id}                          │
 │  POST /users                                │
@@ -48,7 +48,7 @@ The UI design is inspired by modern, real-life anime platforms, delivering a pre
                  │ SQLAlchemy ORM
                  ▼
 ┌─────────────────────────────────────────────┐
-│  PostgreSQL Database (Railway)              │
+│  PostgreSQL Database (Neon or Supabase)     │
 │  users | animes | user_ratings | watchlist  │
 └─────────────────────────────────────────────┘
 ```
@@ -98,7 +98,7 @@ where:
   ||a|| = sqrt(sum(a_i^2)) over all anime user a rated
 ```
 
-### Complexity
+### Time Complexity & Latency
 - **Time Complexity**: O(U * A) where U is the number of users and A is the average number of anime rated per user.
 - **Latency**: Under 200ms for the seeded dataset (100 users, 500 anime).
 - **Cold Start**: Users with 0 ratings receive globally top-rated anime.
@@ -161,7 +161,7 @@ CREATE INDEX idx_watchlist ON watchlist(user_id, status);
 ### Prerequisites
 - Node.js 18+
 - Python 3.11+
-- Docker (for PostgreSQL)
+- Docker (for local PostgreSQL)
 
 ### 1. Setup Project
 ```bash
@@ -260,20 +260,7 @@ cd backend
 python -m pytest tests/test_collaborative.py -v
 ```
 
-All 13 unit tests compile and pass successfully:
-- `test_identical_vectors_return_one` PASSED
-- `test_no_overlap_returns_zero` PASSED
-- `test_similarity_is_bounded` PASSED
-- `test_partial_overlap` PASSED
-- `test_empty_vector_returns_zero` PASSED
-- `test_known_cosine_similarity` PASSED (verifies dot product correctness)
-- `test_excludes_target_user` PASSED
-- `test_returns_k_at_most` PASSED
-- `test_sorted_by_similarity_descending` PASSED
-- `test_returns_empty_for_unknown_user` PASSED
-- `test_does_not_recommend_already_rated` PASSED
-- `test_prediction_within_score_range` PASSED
-- `test_weighted_average_correctness` PASSED
+All 13 unit tests compile and pass successfully.
 
 ### Performance Test
 A performance benchmark script is available at `backend/scripts/perf_test.py` to evaluate recommendation speed on the seeded dataset:
@@ -292,11 +279,11 @@ python scripts/perf_test.py
 3. Configure the Root Directory to `frontend`.
 4. Add the environment variable `NEXT_PUBLIC_API_URL` pointing to your deployed backend URL.
 
-### Backend (Railway)
-1. Import the repository into Railway.
-2. Select the `backend` folder as the root directory.
-3. Add the PostgreSQL plugin to the project.
-4. Set the `FRONTEND_URL` environment variable to your frontend deployment URL.
+### Backend & Database (Render + Neon)
+1. Create a free PostgreSQL instance on [Neon](https://neon.tech). Copy the connection string.
+2. Create a free Web Service on [Render](https://render.com) pointing to the `backend` folder.
+3. Set the environment variables `DATABASE_URL` (your Neon connection string) and `FRONTEND_URL` (your Vercel URL).
+4. Set the build command to `pip install -r requirements.txt` and start command to `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
 
 ---
 
