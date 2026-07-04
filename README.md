@@ -4,6 +4,8 @@ A full-stack anime discovery platform with personalized recommendations powered 
 
 The UI design is inspired by modern, real-life anime platforms, delivering a premium, contemporary visual experience with rich glassmorphism, tailored dark tones, and clean grids.
 
+Live Link: https://anirec-rishi.vercel.app/
+
 ---
 
 ## Features
@@ -105,6 +107,14 @@ where:
 
 ---
 
+### Hosting servces
+- **Frontend**: Next.js 14 (App Router) + TypeScript + Tailwind CSS. Hosted on: Vercel (Free Tier)
+- **Backend API**: FastAPI (Python 3.11) + SQLAlchemy ORM Hosted on: Render (Free Web Service Tier, deployed via a Python/Docker container)
+- **Database**: Hosted on: Neon.tech (Free Serverless Database Tier)
+- **Data Seeding**: Live dataset of 500 real anime from MyAnimeList (via Jikan API) + 100 synthetic users with ~4,800 custom taste ratings for realistic recommendation results.
+
+---
+ 
 ## Database Schema
 
 ```sql
