@@ -1,0 +1,17 @@
+# Root level ignores
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+node_modules/
+.next/
+venv/
+.venv/
+__pycache__/
+.env
+.env.local
+.pytest_cache/

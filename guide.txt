@@ -1,0 +1,114 @@
+AniRec - GitHub Push & Deployment Guide
+
+This guide provides step-by-step instructions to systematically push your project to GitHub and host the Next.js frontend (Vercel) and FastAPI backend (Railway) with PostgreSQL.
+
+================================================================================
+PART 1: Push Project to GitHub
+================================================================================
+
+1. Recommended Repository Name:
+   - anime-recommender-cf
+   - or: anirec-recommendation-system
+
+2. Open your terminal at the root directory:
+   C:\Users\RISHI\.gemini\antigravity-ide\scratch\anime-recommender
+
+3. Initialize Git:
+   git init
+
+4. Verify your .gitignore files:
+   Make sure you have:
+   - backend/.gitignore (excluding venv/, .env, __pycache__/)
+   - frontend/.gitignore (excluding node_modules/, .next/, .env.local)
+
+5. Stage and Commit Files:
+   git add .
+   git commit -m "initial commit: fullstack anime recommendation system with collaborative filtering"
+
+6. Create your repository on GitHub (without adding README, .gitignore, or license).
+
+7. Link and Push to GitHub:
+   Replace <username> with your GitHub username:
+   git remote add origin https://github.com/<username>/anime-recommender-cf.git
+   git branch -M main
+   git push -u origin main
+
+
+================================================================================
+PART 2: Understanding Production Hosting (Client-Server Architecture)
+================================================================================
+
+In local development, you run the backend on port 8000 and the frontend on port 3000. In production, these run on separate public servers (Vercel for frontend, Railway for backend).
+- The frontend (running in the user's browser) makes HTTP requests to the public backend API URL.
+- To prevent browsers from blocking these requests, Cross-Origin Resource Sharing (CORS) is enabled on the backend to allow your Vercel domain.
+
+
+================================================================================
+PART 3: Deployed Backend & Database (Railway)
+================================================================================
+
+Railway hosts your PostgreSQL database and the FastAPI python server together.
+
+Step 1: Create a Railway Project
+  1. Go to https://railway.app and log in.
+  2. Click "New Project" -> "Deploy from GitHub repo".
+  3. Select your repository `anime-recommender-cf`.
+  4. In the settings, set the root directory to `backend`.
+
+Step 2: Add PostgreSQL Database
+  1. In your Railway project dashboard, click "New" -> "Database" -> "Add PostgreSQL".
+  2. Railway will automatically provision the database and inject a `DATABASE_URL` environment variable directly into your backend service.
+
+Step 3: Configure Environment Variables on Railway
+  Under the FastAPI service settings in Railway, add the following variables:
+  - `FRONTEND_URL` = https://your-app-name.vercel.app (You will get this in the next part)
+  - `APP_ENV` = production
+
+Step 4: Deploy and Fetch URL
+  Railway will build and deploy the backend. Copy your public backend URL (e.g., `https://anime-recommender-production.up.railway.app`).
+
+
+================================================================================
+PART 4: Deployed Frontend (Vercel)
+================================================================================
+
+Vercel hosts the Next.js application.
+
+Step 1: Import Repository
+  1. Go to https://vercel.com and log in.
+  2. Click "Add New" -> "Project" -> Import your `anime-recommender-cf` repository.
+  3. Under "Framework Preset", select "Next.js".
+  4. In "Root Directory", click Edit and select `frontend`.
+
+Step 2: Set Environment Variables
+  Expand the "Environment Variables" section and add:
+  - Key: `NEXT_PUBLIC_API_URL`
+  - Value: https://your-backend-url.up.railway.app (The URL from Railway in Part 3)
+
+Step 3: Deploy
+  Click "Deploy". Vercel will build the frontend and provide a public domain (e.g., `https://anime-recommender-cf.vercel.app`).
+
+Step 4: Update CORS
+  Copy your Vercel deployment URL, go back to your Railway backend settings, and make sure `FRONTEND_URL` matches this URL.
+
+
+================================================================================
+PART 5: Seeding the Production Database
+================================================================================
+
+Once both servers are running, seed the production database:
+
+1. Install the Railway CLI locally:
+   npm install -g @railway/cli
+
+2. Login to Railway via CLI:
+   railway login
+
+3. Link to your project:
+   railway link
+
+4. Execute the seeding scripts against the remote database:
+   railway run python scripts/seed_animes.py
+   railway run python scripts/seed_users.py
+
+Your production system is now live, seeded, and fully connected.
