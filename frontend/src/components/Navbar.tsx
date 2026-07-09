@@ -64,7 +64,10 @@ export default function Navbar() {
       setShowAuth(false);
       resetForm();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Something went wrong";
+      const raw = err instanceof Error ? err.message : "Something went wrong";
+      const message = raw.toLowerCase().includes("failed to fetch")
+        ? "Server is waking up (free tier). Please wait 30 seconds and try again."
+        : raw;
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -137,14 +140,14 @@ export default function Navbar() {
           </div>
         </div>
 
-        <div className="md:hidden flex border-t border-white/5">
+        <div className="md:hidden flex border-t border-white/5 overflow-x-auto">
           {NAV_LINKS.map(({ href, label }) => {
             const isActive = pathname === href;
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex-1 flex flex-col items-center py-2.5 text-xs transition-colors ${
+                className={`flex-shrink-0 flex-1 min-w-[60px] flex flex-col items-center py-2.5 text-xs transition-colors ${
                   isActive ? "text-purple-400" : "text-gray-500"
                 }`}
               >
