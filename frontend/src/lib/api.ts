@@ -142,7 +142,7 @@ export const authApi = {
     fetchJson<null>("/auth/logout", { method: "POST" }),
 
   me: (): Promise<AuthResponse> =>
-    fetchJson<AuthResponse>("/auth/me", {}, true),
+    fetchJson<AuthResponse>("/auth/me"),
 };
 
 // Anime API (public — no auth required)
@@ -168,7 +168,7 @@ export const userApi = {
     fetchJson<import("@/types").User>(`/users/${userId}`),
 
   getStats: (): Promise<UserStats> =>
-    fetchJson<UserStats>(`/user/stats`, {}, true),
+    fetchJson<UserStats>(`/user/stats`),
 };
 
 // Ratings API (all protected)
