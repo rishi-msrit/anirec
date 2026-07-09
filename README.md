@@ -1,9 +1,9 @@
-# AniRec — Anime Watchlist & Recommendation Engine
+# AniRec — User-User Collaborative Filtering Watchlist & Recommendation Engine
 
 A full-stack anime discovery app built as a college project. You can browse 500+ real anime, track your watchlist, rate shows, and get personalized recommendations based on what similar users liked — all powered by a collaborative filtering engine written from scratch in pure Python, no ML libraries.
 
 **Live:** https://anirec-rishi.vercel.app
-
+(Refer guide.txt for in dpeth guide)
 ---
 
 ## What it does
