@@ -229,7 +229,7 @@ export default function AnimeDetailPage() {
                   {watchlistStatus && (
                     <button
                       onClick={() => {
-                        watchlistApi.remove(user.id, anime.id).then(() => setWatchlistStatus(null));
+                        watchlistApi.remove(anime.id).then(() => setWatchlistStatus(null));
                       }}
                       className="px-4 py-2.5 rounded-xl border border-red-500/20 text-red-400 text-sm hover:bg-red-500/10 transition-all"
                     >
