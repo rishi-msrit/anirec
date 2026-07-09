@@ -58,8 +58,8 @@ export default function AnimeDetailPage() {
   useEffect(() => {
     if (!user || !anime) return;
     Promise.all([
-      ratingsApi.list(user.id),
-      watchlistApi.list(user.id),
+      ratingsApi.list(),
+      watchlistApi.list(),
     ]).then(([ratings, watchlist]) => {
       const myRating = ratings.find((r: Rating) => r.anime_id === anime.id);
       const myEntry = watchlist.find((w: WatchlistEntry) => w.anime_id === anime.id);
@@ -72,7 +72,7 @@ export default function AnimeDetailPage() {
     if (!user || isUpdating) return;
     setIsUpdating(true);
     try {
-      await ratingsApi.add(user.id, anime!.id, score);
+      await ratingsApi.add(anime!.id, score);
       setUserRating(score);
       setRatingSuccess(true);
       setTimeout(() => setRatingSuccess(false), 2000);
@@ -88,10 +88,10 @@ export default function AnimeDetailPage() {
     setIsUpdating(true);
     try {
       if (watchlistStatus === status) {
-        await watchlistApi.remove(user.id, anime!.id);
+        await watchlistApi.remove(anime!.id);
         setWatchlistStatus(null);
       } else {
-        await watchlistApi.add(user.id, anime!.id, status);
+        await watchlistApi.add(anime!.id, status);
         setWatchlistStatus(status);
       }
     } catch (e) {
