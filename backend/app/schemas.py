@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List
 from datetime import datetime
 
@@ -45,12 +45,12 @@ class AnimePaginated(BaseModel):
 
 class SignupRequest(BaseModel):
     username: str = Field(..., min_length=2, max_length=100)
-    email: str = Field(..., min_length=5)
+    email: EmailStr
     password: str = Field(..., min_length=6)
 
 
 class LoginRequest(BaseModel):
-    email: str
+    email: EmailStr
     password: str
 
 
