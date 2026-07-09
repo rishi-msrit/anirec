@@ -3,38 +3,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from sqlalchemy.exc import IntegrityError
 
-from .database import engine, SessionLocal
-from .models import Base, User
-from .routers import animes, users, ratings, watchlist, recommendations, dashboard
+from .database import engine
+from .models import Base
+from .routers import animes, users, ratings, watchlist, recommendations, dashboard, auth
 
 load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize DB tables
     Base.metadata.create_all(bind=engine)
-
-    # Insert default demo user
-    db = SessionLocal()
-    try:
-        demo = db.query(User).filter(User.email == "demo@anime.app").first()
-        if not demo:
-            demo_user = User(
-                email="demo@anime.app",
-                username="demo_user",
-            )
-            db.add(demo_user)
-            db.commit()
-            print("Demo user created: demo@anime.app (id=1)")
-        else:
-            print(f"Demo user already exists: id={demo.id}")
-    except IntegrityError:
-        db.rollback()
-    finally:
-        db.close()
-
     yield
 
 app = FastAPI(
@@ -52,7 +30,6 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:3001",
         FRONTEND_URL,
-        "https://*.vercel.app",
     ],
     allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
@@ -60,6 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
 app.include_router(animes.router)
 app.include_router(users.router)
 app.include_router(ratings.router)
@@ -78,4 +56,3 @@ def root():
         "docs": "/docs",
         "health": "/health",
     }
-

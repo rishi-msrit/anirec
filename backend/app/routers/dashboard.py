@@ -1,18 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from ..database import get_db
 from ..models import User, UserRating, Watchlist, Anime
 from ..schemas import UserStats
+from ..auth import get_current_user
 
 router = APIRouter(prefix="/user", tags=["Dashboard"])
 
 
-@router.get("/{user_id}/stats", response_model=UserStats)
-def get_user_stats(user_id: int, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+@router.get("/stats", response_model=UserStats)
+def get_user_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user_id = current_user.id
 
     total_rated = db.query(UserRating).filter(UserRating.user_id == user_id).count()
 
@@ -59,4 +61,3 @@ def get_user_stats(user_id: int, db: Session = Depends(get_db)):
         completed_count=watchlist_counts.get("completed", 0),
         plan_to_watch_count=watchlist_counts.get("plan-to-watch", 0),
     )
-

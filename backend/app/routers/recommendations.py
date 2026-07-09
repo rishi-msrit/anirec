@@ -4,23 +4,19 @@ from ..database import get_db
 from ..models import User
 from ..schemas import RecommendationResponse
 from ..algorithms.collaborative import get_recommendations
+from ..auth import get_current_user
 
 router = APIRouter(prefix="/user", tags=["Recommendations"])
 
 
-@router.get("/{user_id}/recommend", response_model=RecommendationResponse)
+@router.get("/recommend", response_model=RecommendationResponse)
 def get_recommendations_endpoint(
-    user_id: int,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    recommendations = get_recommendations(user_id=user_id, db=db, top_n=10)
+    recommendations = get_recommendations(user_id=current_user.id, db=db, top_n=10)
 
     return RecommendationResponse(
-        user_id=user_id,
+        user_id=current_user.id,
         recommendations=recommendations,
     )
-

@@ -34,7 +34,7 @@ export default function WatchlistPage() {
   useEffect(() => {
     if (!user) { setIsLoading(false); return; }
     watchlistApi
-      .list(user.id)
+      .list()
       .then(setEntries)
       .finally(() => setIsLoading(false));
   }, [user]);
@@ -43,7 +43,7 @@ export default function WatchlistPage() {
     if (!user || isUpdating) return;
     setIsUpdating(animeId);
     try {
-      await watchlistApi.remove(user.id, animeId);
+      await watchlistApi.remove(animeId);
       setEntries((prev) => prev.filter((e) => e.anime_id !== animeId));
     } finally {
       setIsUpdating(null);
@@ -54,7 +54,7 @@ export default function WatchlistPage() {
     if (!user || isUpdating) return;
     setIsUpdating(animeId);
     try {
-      await watchlistApi.updateStatus(user.id, animeId, status);
+      await watchlistApi.updateStatus(animeId, status);
       setEntries((prev) =>
         prev.map((e) => (e.anime_id === animeId ? { ...e, status } : e))
       );

@@ -33,7 +33,7 @@ export default function AnimeCard({
     if (!user || isUpdating) return;
     setIsUpdating(true);
     try {
-      await ratingsApi.add(user.id, anime.id, score);
+      await ratingsApi.add(anime.id, score);
       setLocalRating(score);
       onRatingChange?.(score);
     } catch (e) {
@@ -48,11 +48,11 @@ export default function AnimeCard({
     setIsUpdating(true);
     try {
       if (localStatus === status) {
-        await watchlistApi.remove(user.id, anime.id);
+        await watchlistApi.remove(anime.id);
         setLocalStatus(undefined);
         onWatchlistChange?.(null);
       } else {
-        await watchlistApi.add(user.id, anime.id, status);
+        await watchlistApi.add(anime.id, status);
         setLocalStatus(status);
         onWatchlistChange?.(status);
       }

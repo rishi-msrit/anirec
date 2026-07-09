@@ -14,6 +14,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, nullable=False)
     username = Column(String(100), nullable=False)
+    password_hash = Column(String(255), nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     ratings = relationship("UserRating", back_populates="user", cascade="all, delete-orphan")
@@ -76,3 +77,10 @@ class Watchlist(Base):
     user = relationship("User", back_populates="watchlist")
     anime = relationship("Anime", back_populates="watchlist_entries")
 
+
+class RevokedToken(Base):
+    __tablename__ = "revoked_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    jti = Column(String(255), unique=True, nullable=False, index=True)
+    revoked_at = Column(TIMESTAMP, server_default=func.now())

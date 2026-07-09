@@ -5,58 +5,73 @@ import {
   useContext,
   useState,
   useEffect,
+  useCallback,
   ReactNode,
 } from "react";
 import { User } from "@/types";
-import { userApi } from "@/lib/api";
+import { authApi, setAccessToken } from "@/lib/api";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (username: string) => Promise<void>;
-  logout: () => void;
+  isGuest: boolean;
+  signup: (username: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
-
-const STORAGE_KEY = "anime_user";
-
-function generateEmail(username: string): string {
-  const clean = username.toLowerCase().replace(/[^a-z0-9]/g, "_");
-  return `${clean}@anime.app`;
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setUser(parsed);
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
+  // Try to restore session from refresh token cookie on mount
+  const restoreSession = useCallback(async () => {
+    try {
+      const result = await authApi.refresh();
+      if (result) {
+        setAccessToken(result.access_token);
+        setUser(result.user);
       }
+    } catch {
+      // No valid session — user stays as guest
+      setAccessToken(null);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
-  const login = async (username: string): Promise<void> => {
-    const email = generateEmail(username);
-    const user = await userApi.createOrGet(username, email);
-    setUser(user);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
+
+  const signup = async (username: string, email: string, password: string) => {
+    const result = await authApi.signup(username, email, password);
+    setAccessToken(result.access_token);
+    setUser(result.user);
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
+  const login = async (email: string, password: string) => {
+    const result = await authApi.login(email, password);
+    setAccessToken(result.access_token);
+    setUser(result.user);
   };
+
+  const logout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Logout endpoint might fail, but we clear locally regardless
+    }
+    setAccessToken(null);
+    setUser(null);
+  };
+
+  const isGuest = !user && !isLoading;
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, isGuest, signup, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -67,4 +82,3 @@ export function useAuth(): AuthContextType {
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }
-

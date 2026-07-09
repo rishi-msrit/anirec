@@ -108,8 +108,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!user) { setIsLoading(false); return; }
     Promise.all([
-      userApi.getStats(user.id),
-      ratingsApi.list(user.id),
+      userApi.getStats(),
+      ratingsApi.list(),
     ])
       .then(([s, ratings]) => {
         setStats(s);

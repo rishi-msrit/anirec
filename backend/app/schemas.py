@@ -19,8 +19,16 @@ class AnimeCreate(AnimeBase):
     pass
 
 
-class AnimeOut(AnimeBase):
+class AnimeOut(BaseModel):
     id: int
+    title: str
+    synopsis: Optional[str] = None
+    genres: Optional[List[str]] = []
+    average_rating: Optional[float] = None
+    episode_count: Optional[int] = None
+    year: Optional[int] = None
+    external_id: Optional[int] = None
+    image_url: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -31,6 +39,25 @@ class AnimePaginated(BaseModel):
     total: int
     page: int
     pages: int
+
+
+# Auth Schemas
+
+class SignupRequest(BaseModel):
+    username: str = Field(..., min_length=2, max_length=100)
+    email: str = Field(..., min_length=5)
+    password: str = Field(..., min_length=6)
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: "UserOut"
 
 
 # User Schemas
@@ -119,3 +146,6 @@ class UserStats(BaseModel):
     completed_count: int
     plan_to_watch_count: int
 
+
+# Resolve forward references
+AuthResponse.model_rebuild()

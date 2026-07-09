@@ -47,8 +47,8 @@ export default function BrowsePage() {
   useEffect(() => {
     if (!user) return;
     Promise.all([
-      ratingsApi.list(user.id),
-      watchlistApi.list(user.id),
+      ratingsApi.list(),
+      watchlistApi.list(),
     ])
       .then(([ratings, watchlist]) => {
         setUserRatings(

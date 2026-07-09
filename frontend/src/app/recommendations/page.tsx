@@ -49,7 +49,7 @@ export default function RecommendationsPage() {
     if (!user) { setIsLoading(false); return; }
     setIsLoading(true);
     recommendApi
-      .get(user.id)
+      .get()
       .then((res) => {
         setRecs(res.recommendations);
         setAlgorithm(res.algorithm);

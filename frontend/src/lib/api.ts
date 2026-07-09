@@ -1,7 +1,7 @@
 import {
   Anime,
   AnimePaginated,
-  User,
+  AuthResponse,
   Rating,
   WatchlistEntry,
   WatchlistStatus,
@@ -13,6 +13,17 @@ import {
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+// In-memory token storage (never in localStorage to prevent XSS)
+let accessToken: string | null = null;
+
+export function setAccessToken(token: string | null) {
+  accessToken = token;
+}
+
+export function getAccessToken(): string | null {
+  return accessToken;
+}
+
 class ApiError extends Error {
   constructor(
     public status: number,
@@ -23,15 +34,81 @@ class ApiError extends Error {
   }
 }
 
+let isRefreshing = false;
+let refreshPromise: Promise<AuthResponse | null> | null = null;
+
+async function tryRefresh(): Promise<AuthResponse | null> {
+  if (isRefreshing && refreshPromise) return refreshPromise;
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) return null;
+      const data: AuthResponse = await res.json();
+      setAccessToken(data.access_token);
+      return data;
+    } catch {
+      return null;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
 async function fetchJson<T>(
   path: string,
-  options?: RequestInit
+  options?: RequestInit,
+  requireAuth = false
 ): Promise<T> {
   const url = `${API_BASE}${path}`;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options?.headers as Record<string, string>),
+  };
+
+  if (accessToken) {
+    headers["Authorization"] = `Bearer ${accessToken}`;
+  }
+
   const response = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    headers,
+    credentials: "include",
   });
+
+  // On 401, try refreshing the token once
+  if (response.status === 401 && !path.startsWith("/auth/")) {
+    const refreshResult = await tryRefresh();
+    if (refreshResult) {
+      headers["Authorization"] = `Bearer ${refreshResult.access_token}`;
+      const retryResponse = await fetch(url, {
+        ...options,
+        headers,
+        credentials: "include",
+      });
+
+      if (!retryResponse.ok) {
+        const body = await retryResponse.json().catch(() => ({}));
+        throw new ApiError(
+          retryResponse.status,
+          body.detail || `HTTP ${retryResponse.status}`
+        );
+      }
+      if (retryResponse.status === 204) return null as T;
+      return retryResponse.json();
+    }
+
+    // Refresh failed — clear token and throw
+    setAccessToken(null);
+    throw new ApiError(401, "Session expired. Please sign in again.");
+  }
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
@@ -42,11 +119,34 @@ async function fetchJson<T>(
   }
 
   if (response.status === 204) return null as T;
-
   return response.json();
 }
 
-// Anime API
+// Auth API
+
+export const authApi = {
+  signup: (username: string, email: string, password: string): Promise<AuthResponse> =>
+    fetchJson<AuthResponse>("/auth/signup", {
+      method: "POST",
+      body: JSON.stringify({ username, email, password }),
+    }),
+
+  login: (email: string, password: string): Promise<AuthResponse> =>
+    fetchJson<AuthResponse>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+
+  refresh: (): Promise<AuthResponse | null> => tryRefresh(),
+
+  logout: (): Promise<null> =>
+    fetchJson<null>("/auth/logout", { method: "POST" }),
+
+  me: (): Promise<AuthResponse> =>
+    fetchJson<AuthResponse>("/auth/me", {}, true),
+};
+
+// Anime API (public — no auth required)
 
 export const animeApi = {
   list: (filters: AnimeFilters = {}): Promise<AnimePaginated> => {
@@ -65,80 +165,68 @@ export const animeApi = {
 // User API
 
 export const userApi = {
-  createOrGet: (username: string, email: string): Promise<User> =>
-    fetchJson<User>("/users", {
-      method: "POST",
-      body: JSON.stringify({ username, email }),
-    }),
+  get: (userId: number): Promise<import("@/types").User> =>
+    fetchJson<import("@/types").User>(`/users/${userId}`),
 
-  get: (userId: number): Promise<User> =>
-    fetchJson<User>(`/users/${userId}`),
-
-  getStats: (userId: number): Promise<UserStats> =>
-    fetchJson<UserStats>(`/user/${userId}/stats`),
+  getStats: (): Promise<UserStats> =>
+    fetchJson<UserStats>(`/user/stats`, {}, true),
 };
 
-// Ratings API
+// Ratings API (all protected)
 
 export const ratingsApi = {
-  add: (userId: number, animeId: number, score: number): Promise<Rating> =>
-    fetchJson<Rating>(`/user/${userId}/ratings`, {
+  add: (animeId: number, score: number): Promise<Rating> =>
+    fetchJson<Rating>(`/user/ratings`, {
       method: "POST",
       body: JSON.stringify({ anime_id: animeId, score }),
     }),
 
-  list: (userId: number): Promise<Rating[]> =>
-    fetchJson<Rating[]>(`/user/${userId}/ratings`),
+  list: (): Promise<Rating[]> =>
+    fetchJson<Rating[]>(`/user/ratings`),
 
-  remove: (userId: number, animeId: number): Promise<null> =>
-    fetchJson<null>(`/user/${userId}/ratings/${animeId}`, {
+  remove: (animeId: number): Promise<null> =>
+    fetchJson<null>(`/user/ratings/${animeId}`, {
       method: "DELETE",
     }),
 };
 
-// Watchlist API
+// Watchlist API (all protected)
 
 export const watchlistApi = {
   add: (
-    userId: number,
     animeId: number,
     status: WatchlistStatus
   ): Promise<WatchlistEntry> =>
-    fetchJson<WatchlistEntry>(`/user/${userId}/watchlist`, {
+    fetchJson<WatchlistEntry>(`/user/watchlist`, {
       method: "POST",
       body: JSON.stringify({ anime_id: animeId, status }),
     }),
 
-  list: (
-    userId: number,
-    status?: WatchlistStatus
-  ): Promise<WatchlistEntry[]> => {
+  list: (status?: WatchlistStatus): Promise<WatchlistEntry[]> => {
     const params = status ? `?status=${status}` : "";
-    return fetchJson<WatchlistEntry[]>(`/user/${userId}/watchlist${params}`);
+    return fetchJson<WatchlistEntry[]>(`/user/watchlist${params}`);
   },
 
   updateStatus: (
-    userId: number,
     animeId: number,
     status: WatchlistStatus
   ): Promise<WatchlistEntry> =>
-    fetchJson<WatchlistEntry>(`/user/${userId}/watchlist/${animeId}`, {
+    fetchJson<WatchlistEntry>(`/user/watchlist/${animeId}`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
     }),
 
-  remove: (userId: number, animeId: number): Promise<null> =>
-    fetchJson<null>(`/user/${userId}/watchlist/${animeId}`, {
+  remove: (animeId: number): Promise<null> =>
+    fetchJson<null>(`/user/watchlist/${animeId}`, {
       method: "DELETE",
     }),
 };
 
-// Recommendations API
+// Recommendations API (protected)
 
 export const recommendApi = {
-  get: (userId: number): Promise<RecommendationResponse> =>
-    fetchJson<RecommendationResponse>(`/user/${userId}/recommend`),
+  get: (): Promise<RecommendationResponse> =>
+    fetchJson<RecommendationResponse>(`/user/recommend`),
 };
 
 export { ApiError };
-
