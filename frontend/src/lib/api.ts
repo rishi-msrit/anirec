@@ -111,10 +111,26 @@ async function fetchJson<T>(
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new ApiError(
-      response.status,
-      body.detail || `HTTP ${response.status}`
-    );
+    // Pydantic 422 returns detail as an array of {loc, msg, type}
+    // Other errors return detail as a plain string
+    let message: string;
+    if (Array.isArray(body.detail)) {
+      // Pick the first validation error and make it human-readable
+      const first = body.detail[0];
+      const field = first?.loc?.slice(-1)[0]; // last item in loc is the field name
+      const msg: string = first?.msg || "Invalid input";
+      // Map common pydantic messages to friendly ones
+      if (msg.includes("valid email")) {
+        message = "Please enter a valid email address";
+      } else if (field) {
+        message = `${field}: ${msg}`;
+      } else {
+        message = msg;
+      }
+    } else {
+      message = body.detail || `HTTP ${response.status}`;
+    }
+    throw new ApiError(response.status, message);
   }
 
   if (response.status === 204) return null as T;
