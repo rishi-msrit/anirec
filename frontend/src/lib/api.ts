@@ -64,8 +64,7 @@ async function tryRefresh(): Promise<AuthResponse | null> {
 
 async function fetchJson<T>(
   path: string,
-  options?: RequestInit,
-  requireAuth = false
+  options?: RequestInit
 ): Promise<T> {
   const url = `${API_BASE}${path}`;
   const headers: Record<string, string> = {
