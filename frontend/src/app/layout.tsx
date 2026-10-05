@@ -44,14 +44,7 @@ export default function RootLayout({
             {children}
           </main>
 
-          <footer className="relative z-10 border-t border-white/5 mt-20 py-8">
-            <div className="max-w-7xl mx-auto px-6 text-center">
-              <p className="text-gray-500 text-sm">
-                <span className="gradient-text font-semibold">AniRec</span>{" "}
-                · Built with Next.js + FastAPI · Recommendations by Collaborative Filtering
-              </p>
-            </div>
-          </footer>
+
         </AuthProvider>
       </body>
     </html>
