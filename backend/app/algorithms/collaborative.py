@@ -99,7 +99,7 @@ def get_recommendations(
 ) -> List[dict]:
     matrix = _build_rating_matrix(db)
 
-    if user_id not in matrix or len(matrix[user_id]) < 1:
+    if user_id not in matrix or len(matrix[user_id]) < 5:
         return _cold_start_recommendations(db, user_id, top_n)
 
     neighbors = _get_top_neighbors(user_id, matrix, k=20)

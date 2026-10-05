@@ -83,6 +83,19 @@ export default function AnimeDetailPage() {
     }
   };
 
+  const handleRemoveRating = async () => {
+    if (!user || isUpdating || userRating === 0) return;
+    setIsUpdating(true);
+    try {
+      await ratingsApi.remove(anime!.id);
+      setUserRating(0);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleWatchlist = async (status: WatchlistStatus) => {
     if (!user || isUpdating) return;
     setIsUpdating(true);
@@ -203,6 +216,16 @@ export default function AnimeDetailPage() {
                   <p className="text-emerald-400 text-sm mt-2 animate-fade-in">
                     Rating saved!
                   </p>
+                )}
+                {userRating > 0 && !ratingSuccess && (
+                  <button
+                    id="remove-rating-btn"
+                    onClick={handleRemoveRating}
+                    disabled={isUpdating}
+                    className="mt-3 text-xs text-gray-500 hover:text-red-400 transition-colors flex items-center gap-1 disabled:cursor-not-allowed"
+                  >
+                    <span>✕</span> Remove rating
+                  </button>
                 )}
               </div>
 
