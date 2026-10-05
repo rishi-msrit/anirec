@@ -131,7 +131,7 @@ class RecommendationItem(BaseModel):
 class RecommendationResponse(BaseModel):
     user_id: int
     recommendations: List[RecommendationItem]
-    algorithm: str = "User-User Collaborative Filtering (Cosine Similarity)"
+    algorithm: str = "cold_start"
 
 
 # Dashboard Schemas

@@ -87,7 +87,7 @@ export default function RecommendationsPage() {
           Top 10 anime picks based on users with similar taste, ranked by predicted score.
         </p>
 
-        {algorithm && (
+        {algorithm && algorithm !== "cold_start" && (
           <div className="mt-4 inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/20 rounded-xl px-4 py-2 text-xs text-purple-300">
             <span>{algorithm}</span>
           </div>

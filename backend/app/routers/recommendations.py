@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import User
@@ -16,7 +16,14 @@ def get_recommendations_endpoint(
 ):
     recommendations = get_recommendations(user_id=current_user.id, db=db, top_n=10)
 
+    # Determine which algorithm was actually used from results
+    if recommendations and recommendations[0].get("algorithm") == "cf":
+        algorithm = "Collaborative Filtering"
+    else:
+        algorithm = "cold_start"
+
     return RecommendationResponse(
         user_id=current_user.id,
         recommendations=recommendations,
+        algorithm=algorithm,
     )
